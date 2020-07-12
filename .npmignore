@@ -1,7 +1,7 @@
-test
-src
 CONTRIBUTING.md
 .editorconfig
 .gitignore
-dangerfile.ts
-
+test.*
+index.ts
+tsconfig.json
+.prettierrc.js
