@@ -1,2 +1,2 @@
-# ${{ name }} contributing guide.
+# Validate RC contributing guide.
 
