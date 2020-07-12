@@ -1,0 +1,36 @@
+{
+	"name": "validate-rc",
+	"version": "1.0.0",
+	"description": "Validate config files following user-defined rules.",
+	"main": "index.js",
+	"directories": {
+		"lib": "lib",
+		"test": "test"
+	},
+	"scripts": {
+		"test": "tsc ./test.ts && npx mocha ./test.js"
+	},
+	"keywords": [
+		"validate",
+		"rc",
+		"typescript",
+		"config",
+		"utility",
+		"cli",
+		"optional",
+		"choice",
+		"interface-like",
+		"any"
+	],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/chai": "^4.2.11",
+		"@types/mocha": "^8.0.0",
+		"chai": "^4.2.0",
+		"mocha": "^8.0.1",
+		"ts-mocha": "^7.0.0",
+		"ts-node": "^8.10.2",
+		"typescript": "^3.9.6"
+	}
+}
