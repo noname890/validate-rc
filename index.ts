@@ -6,7 +6,7 @@ const overrides: any = {
 			if (isNaN(this.num) || (this.num === true || this.num === false)) {
 				// is not a number so we throw
 				// it doesn't matter wht we write inside the error
-				throw new Error();
+				throw new ValidationError('Number', this.num.constructor.name);
 			}
 		}
 	},
@@ -14,7 +14,7 @@ const overrides: any = {
 	[String]: class {
 		constructor(private str: any) {
 			if (typeof this.str !== 'string') {
-				throw new Error();
+				throw new ValidationError('String', this.str.constructor.name);
 			}
 		}
 	},
@@ -22,7 +22,7 @@ const overrides: any = {
 	[Boolean]: class {
 		constructor(private bool: any) {
 			if (this.bool !== true && this.bool !== false) {
-				throw new Error();
+				throw new ValidationError('Boolean', this.bool.constructor.name);
 			}
 		}
 	},
@@ -30,23 +30,23 @@ const overrides: any = {
 	[Array]: class {
 		constructor(private arr: any) {
 			if (!Array.isArray(this.arr)) {
-				throw new Error();
+				throw new ValidationError('Array', this.arr.constructor.name);
 			}
 		}
 	},
 	// @ts-ignore
 	[Object]: class {
 		constructor(private obj: any) {
-			if (!isObject(obj)) {
-				throw new Error();
+			if (!isObject(this.obj)) {
+				throw new ValidationError('Object', this.obj.constructor.name);
 			}
 		}
 	},
 	// @ts-ignore
 	[Function]: class {
 		constructor(private fn: any) {
-			if (typeof fn !== 'function') {
-				throw new Error();
+			if (typeof this.fn !== 'function') {
+				throw new ValidationError('Function', this.fn.constructor.name);
 			}
 		}
 	}
@@ -58,6 +58,15 @@ const overrides: any = {
  */
 function isObject(obj: object): boolean {
 	return !!obj && obj.constructor === Object;
+}
+
+export class ValidationError extends Error {
+	public name = 'ValidationError';
+	public readonly VALIDATION_ERROR = true;
+
+	constructor(public expects: string, public got: string) {
+		super('Please handle this error, for more information: https://github.com/noname890/validate-rc');
+	}
 }
 
 /**
@@ -75,19 +84,26 @@ function isObject(obj: object): boolean {
 export function Optional(rules: object | Function): Function {
 	return class {
 		constructor(private rc: object) {
-			if (typeof rules !== 'object') {
-				// rules is not an object, so to pass it to validateRc
-				// we have to create a fake object
-				const fakeRule = { RULE: rules };
-				const fakeRc = { RULE: this.rc };
+			try {
+				if (typeof rules !== 'object') {
+					// rules is not an object, so to pass it to validateRc
+					// we have to create a fake object
+					const fakeRule = { RULE: rules };
+					const fakeRc = { RULE: this.rc };
 
-				if (this.rc) {
-					validateRc(fakeRule, fakeRc);
+					if (this.rc) {
+						validateRc(fakeRule, fakeRc);
+					}
+				} else {
+					if (this.rc) {
+						validateRc(rules, this.rc);
+					}
 				}
-			} else {
-				if (this.rc) {
-					validateRc(rules, this.rc);
+			} catch (e) {
+				if (e.VALIDATION_ERROR) {
+					throw new ValidationError(rules ? rules.constructor.name : 'undefined', e.got);
 				}
+				throw e;
 			}
 		}
 	};
@@ -110,7 +126,7 @@ export function Choice(...choiches: any[]): Function {
 	return class {
 		constructor(private rc: any) {
 			if (!choiches.includes(this.rc)) {
-				throw new Error();
+				throw new ValidationError(choiches.map((val) => "'" + val + "'").join(', '), `'${this.rc}'`);
 			}
 		}
 	};
@@ -159,20 +175,12 @@ export class Any {
 export default function validateRc(rules: any, rc: any): boolean | never {
 	for (const i in rules) {
 		if (overrides[rules[i]]) {
-			try {
-				// validate, `rules[i]` can be any constructor, even a user-defined one
-				new overrides[rules[i]](rc[i]);
-			} catch (e) {
-				throw new Error(`Expected '${rules[i].constructor.name}' found '${rc[i].constructor.name}'`);
-			}
+			// validate, `rules[i]` can be any constructor, even a user-defined one
+			new overrides[rules[i]](rc[i]);
 		} else if (typeof rules[i] === 'object' && !Array.isArray(rules[i])) {
 			validateRc(rules[i], rc[i]);
 		} else {
-			try {
-				new rules[i](rc[i]);
-			} catch (e) {
-				throw new Error(`Expected '${rules[i].constructor.name}' found '${rc[i].constructor.name}'`);
-			}
+			new rules[i](rc[i]);
 		}
 	}
 

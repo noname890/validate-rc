@@ -22,7 +22,7 @@
 		"interface-like",
 		"any"
 	],
-	"author": "",
+	"author": "noname",
 	"license": "ISC",
 	"devDependencies": {
 		"@types/chai": "^4.2.11",
